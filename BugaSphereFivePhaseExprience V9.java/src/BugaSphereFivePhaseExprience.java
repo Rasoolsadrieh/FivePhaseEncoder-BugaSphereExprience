@@ -1,6 +1,6 @@
-// BugaFivePhaseDemoV8.java
-//Designed by Seyedrasool Sadrieh @Mesgona November 2025
-// v8.4 — Synced phase color (bg + pentagon) + breath ratios + phase title
+// BugaSphereFivePhaseExprience.java
+// Buga Sphere Five-Phase Experience
+// Designed by Seyedrasool Sadrieh @ Mesgona — November 2025, Los Angeles
 //
 // • One phase = one full breath (inhale + exhale).
 // • Breath styles (inhale / exhale):
@@ -56,7 +56,7 @@ import java.awt.geom.*;
 import java.awt.geom.Point2D;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BugaFivePhaseDemoV8 {
+public class BugaSphereFivePhaseExprience {
 
     /* ---------- Phase model ---------- */
     static class Phase {
@@ -824,7 +824,7 @@ public class BugaFivePhaseDemoV8 {
     /* ---------- Main ---------- */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("Five-Phase Encoder — v8.4");
+            JFrame f = new JFrame("BugaSphere Five-Phase Experience");
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             f.setLayout(new BorderLayout());
 
