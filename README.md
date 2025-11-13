@@ -218,14 +218,14 @@ Perfect for meditation.
 
 ---
 
-## **5. Sound On/Off**
-Press **S** to mute or enable frequencies.
+## **5. Stop**
+Press **Space bar** to stop or start.
 
 ---
 
 ## **6. Fullscreen**
 Press:
-- **F** or  
+- **alt + Enter** or  
 - **F11**
 
 for full immersion.
