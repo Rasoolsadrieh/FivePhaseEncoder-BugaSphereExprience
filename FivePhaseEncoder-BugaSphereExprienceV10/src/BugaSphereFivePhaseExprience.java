@@ -688,7 +688,7 @@ public class BugaSphereFivePhaseExprience {
         }
     }
 
-    /* ---------- Audio player ---------- */
+    /* ---------- Audio player (MONO) ---------- */
     static class TonePlayer implements AutoCloseable {
         final float SR = 44100f;
         final AudioFormat fmt = new AudioFormat(SR, 16, 2, true, false);
@@ -710,7 +710,7 @@ public class BugaSphereFivePhaseExprience {
 
         void playSimple(double hz,
                         int ms,
-                        double inhaleFrac,          // 0–1: fraction of phase as INHALE
+                        double inhaleFrac,          // still passed for timing consistency, not used in audio panning
                         AtomicBoolean paused,
                         AtomicBoolean interrupt,
                         boolean hardCut,
@@ -767,16 +767,13 @@ public class BugaSphereFivePhaseExprience {
                     // Base waveform
                     double pure = Math.sin(phase);
                     double rounded = 0.85 * pure + 0.15 * Math.sin(phase * 0.5);
-                    double sVal = rounded * env * hann * 0.32;
+                    double sVal = rounded * env * hann * 0.30;
 
-                    // Inhale vs exhale panning over the phase
-                    double tPhase = total <= 0 ? 0.0 : (g / (double) total);
-                    boolean inInhale = tPhase < inhaleFrac;
+                    // MONO: same signal to both channels (no panning)
+                    double l = sVal;
+                    double r = sVal;
 
-                    double l = sVal * (inInhale ? 0.90 : 0.60);
-                    double r = sVal * (inInhale ? 0.60 : 0.90);
-
-                    // Micro-crossfade with last frame to avoid clicks
+                    // Micro-crossfade with last phase to avoid clicks at phase boundaries
                     if (haveLastOut) {
                         int idx = sent + i;
                         if (idx < RAMP_SAMPLES) {
