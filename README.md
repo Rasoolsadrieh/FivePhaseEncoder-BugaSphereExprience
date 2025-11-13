@@ -165,8 +165,8 @@ only breath, color, motion, and presence.
 
 ---
 
-## **1. Open the Program**
-Double-click the EXE.  
+## **1. Use the program exe file if not using Java**
+Download the file Sphere.exe from repo to you PC and Double-click the Sphere.exe on Windows  
 The Sphere will appear instantly.
 
 No setup.  
