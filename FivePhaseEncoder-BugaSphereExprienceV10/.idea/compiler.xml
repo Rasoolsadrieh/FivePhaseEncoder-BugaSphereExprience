@@ -2,7 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="18">
-      <module name="BugaSphereFivePhaseExprience.java" target="" />
+      <module name="FivePhaseEncoder-BugaSphereExprienceV10" target="18" />
     </bytecodeTargetLevel>
   </component>
 </project>
