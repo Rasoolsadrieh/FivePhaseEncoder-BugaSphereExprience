@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="FivePhaseEncoder-BugaSphereExprienceV10:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/FivePhaseEncoder_BugaSphereExprienceV10_jar</output-path>
-    <root id="archive" name="FivePhaseEncoder-BugaSphereExprienceV10.jar">
-      <element id="module-output" name="FivePhaseEncoder-BugaSphereExprienceV10" />
-    </root>
-  </artifact>
-</component>
