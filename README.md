@@ -331,7 +331,7 @@ for full immersion.
 
 ---
 
-## **8. Reset Data History**
+## **7. Reset Data History**
 
 The **Reset Data** control clears all saved breathing history.
 
