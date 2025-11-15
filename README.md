@@ -48,35 +48,76 @@ Built for deep breathing, coherence, meditation, focus enhancement, and nervous-
 
 ---
 
-## 🎮 Controls
+## 🎮 Controls (V12)
 
-### Global  
-- **Space** — Pause / Resume  
-- **H** — Toggle HUD  
-- **F11** or **Alt+Enter** — Fullscreen  
-- **Esc** — Exit or leave fullscreen  
+### Keyboard Controls  
+| Key | Action |
+|-----|--------|
+| **Space** | Start / Pause / Resume |
+| **S** | Stop + Save Session |
+| **H** | Toggle HUD (visual-only mode) |
+| **F11** or **Alt+Enter** | Fullscreen toggle |
+| **Esc** | Exit or leave fullscreen |
+
+---
 
 ### Breath Style  
-- **Q** — Coherent 50/50  
-- **W** — Relaxed 60/40  
-- **E** — Deep Calm 67/33  
+| Key | Mode |
+|-----|------|
+| **Q** | Coherent (50/50) |
+| **W** | Relaxed (60/40) |
+| **E** | Deep Calm (67/33) |
 
-### Speed  
-- **1** — IGNITE (10s)  
-- **2** — BALANCE (20s)  
-- **3** — HARMONY (30s)  
-- **4** — ZEN (60s)  
-- **5** — TRANSCEND (120s)  
+---
 
-### Transition  
-- **T** — Hard  
-- **Y** — Soft  
+### Speed Modes  
+| Key | Loop Time |
+|-----|-----------|
+| **1** | IGNITE — 10s |
+| **2** | BALANCE — 20s |
+| **3** | HARMONY — 30s |
+| **4** | ZEN — 60s |
+| **5** | TRANSCEND — 120s |
 
-### Rotation  
-- **7** — Continuous  
-- **8** — Kinetic 72°  
-- **0** — No Motion  
+---
 
+### Transition Type  
+| Key | Mode |
+|-----|------|
+| **T** | Hard Cut |
+| **Y** | Soft Fade |
+
+---
+
+### Rotation Modes  
+| Key | Mode |
+|-----|------|
+| **7** | Continuous |
+| **8** | Kinetic (72° snap) |
+| **0** | No Motion |
+
+---
+
+## 🔘 On-Screen Controls (V12)
+
+There is **no HUD toggle button**, only a key (**H**).
+
+The interface contains:
+
+| UI Area | Function |
+|---------|----------|
+| **Start / Pause Button** | Same as Space key |
+| **Stop Button** | Ends session + saves history |
+| **History Toggle (checkbox)** | Show / hide session history panel |
+| **Breath Style Selector** | Coherent / Relaxed / Deep Calm |
+| **Transition Selector** | Hard / Soft |
+| **Speed Selector** | IGNITE / BALANCE / HARMONY / ZEN / TRANSCEND |
+| **Rotation Selector** | Continuous / Kinetic / No Motion |
+| **Reset Data Button** | Clears ALL saved stats (with warning prompt) |
+
+Every mode can be changed **visually** or by **keyboard**.
+
+Controls are **fully redundant for comfort**.
 ---
 
 ## 🚀 How to Run
@@ -95,6 +136,47 @@ javac BugaSphereFivePhaseExprience.java
 java BugaSphereFivePhaseExprience
 ```
 ---
+## 🆕 What’s New in Version 12
+
+- **Full Session Tracking System**
+  - Current session total time
+  - Lifetime total time
+  - Time per breath style
+  - Time per speed mode
+
+- **Last Session Memory**
+  - Remembers your previous session
+  - Loads last session length on launch
+
+- **Session Segments History**
+  - Every mode change is recorded
+  - Last Session table now visible
+
+- **Pause ≠ Stop (Fixed)**
+  - Pausing no longer resets time
+  - You can pause anytime and resume cleanly
+
+- **Safe Icon Loading**
+  - No crash if icon files are missing
+
+- **Timing Sync Improvements**
+  - Color, sound, inner fill, and pentagon now 100% synchronized
+  - Phase 5 → Phase 1 transition now smooth
+
+- **Soft Transition Improved**
+  - Now cleaner, smoother, and rhythmic
+
+- **HUD Behavior Fixed & Improved**
+  - Doesn’t jump or reset
+  - Last Session always shown correctly
+  - History and Session windows separated
+
+- **Reset Data Button**
+  - Clears all session history
+  - Includes confirmation dialog
+
+- **First-Phase Double-Trigger Bug Fixed**
+  - App no longer starts with 2 quick phases
 
 ---
 
@@ -105,7 +187,7 @@ java BugaSphereFivePhaseExprience
 
 
 ---
-# 🌌 BugaSphere – Five-Phase Encoder (Version 10)  
+# 🌌 BugaSphere – Five-Phase Encoder (Version 12)  
 ### *Instruction Guide*
 
 ---
@@ -160,7 +242,7 @@ only breath, color, motion, and presence.
 
 ---
 
-# 🌈 How to Use the Five-Phase Encoder (Version 10)
+# 🌈 How to Use the Five-Phase Encoder (Version 12)
 *A simple and friendly guide to help you get started quickly.*
 
 ---
@@ -219,7 +301,24 @@ Perfect for meditation.
 ---
 
 ## **5. Stop**
-Press **Space bar** to stop or start.
+**STOP is not Pause.**  
+It fully ends the current session and saves it.
+
+When you press **STOP** (button or **S** key):
+
+1. The session immediately ends
+2. The total session time is finalized
+3. All mode segments (breath / speed / rotation / transition) are properly closed
+4. The session is written to:
+   - `sessions.csv`
+   - `totals.csv`
+   - `last_segments.csv`
+5. The **Last Session** panel updates instantly
+6. Lifetime totals are updated and saved
+7. You may start a new session anytime
+
+**Pause = temporary** (session continues later)  
+**Stop = complete** (session is saved and closed)
 
 ---
 
@@ -232,7 +331,32 @@ for full immersion.
 
 ---
 
-## **7. Exit**
+## **8. Reset Data History**
+
+The **Reset Data** control clears all saved breathing history.
+
+When you click **Reset Data** inside the History panel:
+
+1. A confirmation dialog appears:
+   > “Are you sure you want to delete the data for your sessions?”
+2. If confirmed, it permanently deletes:
+   - `sessions.csv`
+   - `totals.csv`
+   - `last_segments.csv`
+3. All lifetime stats return to zero
+4. History and last session panels become empty
+5. The app continues running normally — no restart required
+
+This action **cannot be undone**.
+
+Use it only if you want to:
+- Start fresh
+- Erase all past session logs
+- Reset all accumulated timing
+
+---
+
+## **8. Exit**
 Press **ESC** or close the window normally.
 
 ---
