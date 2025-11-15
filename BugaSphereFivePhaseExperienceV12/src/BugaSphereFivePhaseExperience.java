@@ -69,7 +69,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import java.io.File;
 
-
 public class BugaSphereFivePhaseExperience {
 
     /* ---------- Phase model ---------- */
@@ -514,6 +513,11 @@ public class BugaSphereFivePhaseExperience {
 
         // Clickable area for "Reset data" inside History window
         private Rectangle resetDataBounds = null;
+
+        // NEW: in-panel confirmation UI for reset
+        private boolean resetConfirmVisible = false;
+        private Rectangle resetYesBounds = null;
+        private Rectangle resetNoBounds  = null;
 
         Panel() {
             setBackground(new Color(20, 20, 20));
@@ -1147,7 +1151,10 @@ public class BugaSphereFivePhaseExperience {
             textY += lineStep; // Zen
             textY += lineStep; // Transcend
 
-            int contentBottom = textY;
+            // Reserve some space at bottom for the confirmation box if visible
+            int confirmBoxExtra = resetConfirmVisible ? 80 : 0;
+
+            int contentBottom = textY + confirmBoxExtra;
             int boxH = (contentBottom - historyY) + 16;
             int maxBoxH = getHeight() - historyY - 20;
             boxH = Math.min(boxH, maxBoxH);
@@ -1387,6 +1394,66 @@ public class BugaSphereFivePhaseExperience {
             lw = fmBold.stringWidth(lbl);
             g2.setFont(plain14);
             g2.drawString(fmtMillis(effTranscend), textX + lw, textY);
+            textY += lineStep;
+
+            // ---------- In-panel confirmation UI ----------
+            resetYesBounds = null;
+            resetNoBounds  = null;
+
+            if (resetConfirmVisible) {
+                int dialogW = boxW - 32;
+                int dialogH = 70;
+                int dialogX = historyX + 16;
+                int dialogY = historyY + boxH - dialogH - 16;
+
+                // Background
+                g2.setColor(new Color(0, 0, 0, 180));
+                g2.fillRoundRect(dialogX, dialogY, dialogW, dialogH, 12, 12);
+                g2.setColor(new Color(255, 255, 255, 180));
+                g2.drawRoundRect(dialogX, dialogY, dialogW, dialogH, 12, 12);
+
+                // Text
+                g2.setFont(bold14);
+                String q = "Reset all data?";
+                FontMetrics fm = g2.getFontMetrics();
+                int qW = fm.stringWidth(q);
+                int qX = dialogX + (dialogW - qW) / 2;
+                int qY = dialogY + 24;
+                g2.drawString(q, qX, qY);
+
+                // Buttons
+                int btnW = 70;
+                int btnH = 24;
+                int gap = 16;
+                int totalBtnsW = btnW * 2 + gap;
+                int btnStartX = dialogX + (dialogW - totalBtnsW) / 2;
+                int btnY = dialogY + dialogH - btnH - 10;
+
+                // YES
+                resetYesBounds = new Rectangle(btnStartX, btnY, btnW, btnH);
+                g2.setColor(new Color(30, 160, 120, 220));
+                g2.fillRoundRect(btnStartX, btnY, btnW, btnH, 10, 10);
+                g2.setColor(Color.WHITE);
+                g2.drawRoundRect(btnStartX, btnY, btnW, btnH, 10, 10);
+                String yesText = "Yes";
+                int yesW = fm.stringWidth(yesText);
+                g2.drawString(yesText,
+                        btnStartX + (btnW - yesW) / 2,
+                        btnY + btnH - 7);
+
+                // NO
+                int noX = btnStartX + btnW + gap;
+                resetNoBounds = new Rectangle(noX, btnY, btnW, btnH);
+                g2.setColor(new Color(120, 120, 120, 220));
+                g2.fillRoundRect(noX, btnY, btnW, btnH, 10, 10);
+                g2.setColor(Color.WHITE);
+                g2.drawRoundRect(noX, btnY, btnW, btnH, 10, 10);
+                String noText = "No";
+                int noW = fm.stringWidth(noText);
+                g2.drawString(noText,
+                        noX + (btnW - noW) / 2,
+                        btnY + btnH - 7);
+            }
         }
 
         private void drawBreathCountdownChip(Graphics2D g2, int xLeft, int centerY,
@@ -1520,20 +1587,28 @@ public class BugaSphereFivePhaseExperience {
             return lines;
         }
 
-        // Handle mouse click for "Reset data" inside History window
+        // Handle mouse click for "Reset data" and confirmation buttons
         void handleClick(Point p, Component parent) {
-            if (!showHud || !showHistory || resetDataBounds == null) return;
-            if (resetDataBounds.contains(p)) {
-                int result = JOptionPane.showConfirmDialog(
-                        parent,
-                        "Are you sure you want to delete the data for your sessions?",
-                        "Confirm Reset",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                );
-                if (result == JOptionPane.YES_OPTION) {
+            if (!showHud || !showHistory) return;
+
+            // If confirmation is open, check Yes/No first
+            if (resetConfirmVisible) {
+                if (resetYesBounds != null && resetYesBounds.contains(p)) {
+                    resetConfirmVisible = false;
                     resetAllData();
+                    return;
                 }
+                if (resetNoBounds != null && resetNoBounds.contains(p)) {
+                    resetConfirmVisible = false;
+                    repaint();
+                    return;
+                }
+            }
+
+            // If clicking the Reset pill, show confirmation box
+            if (resetDataBounds != null && resetDataBounds.contains(p)) {
+                resetConfirmVisible = true;
+                repaint();
             }
         }
     }
@@ -1546,50 +1621,94 @@ public class BugaSphereFivePhaseExperience {
         private boolean isFullScreen = false;
         private GraphicsDevice fsDevice;
 
-        FullScreenHelper(JFrame f) { frame = f; }
+        FullScreenHelper(JFrame f) {
+            this.frame = f;
+        }
 
-        boolean isFullScreen() { return isFullScreen; }
+        boolean isFullScreen() {
+            return isFullScreen;
+        }
 
         void toggle() {
-            if (isFullScreen) exitFullScreen();
-            else enterFullScreen();
+            if (isFullScreen) {
+                exitFullScreen();
+            } else {
+                enterFullScreen();
+            }
         }
 
         private void enterFullScreen() {
-            GraphicsDevice dev = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+            GraphicsDevice dev = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice();
+
+            fsDevice = dev;
             prevBounds = frame.getBounds();
             wasDecorated = frame.isUndecorated();
-            fsDevice = dev;
+
             try {
+                // Required to change decoration flags
                 frame.dispose();
                 frame.setUndecorated(true);
                 frame.setResizable(false);
-                if (dev.isFullScreenSupported()) dev.setFullScreenWindow(frame);
-                else {
+
+                // Show window before or while going fullscreen
+                frame.setVisible(true);
+
+                if (dev.isFullScreenSupported()) {
+                    dev.setFullScreenWindow(frame);
+                } else {
                     frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                    frame.setVisible(true);
                 }
+
                 isFullScreen = true;
+
+                // Make sure it doesn't end up behind other windows
+                bringToFrontAndFocus();
+
             } catch (Exception ex) {
+                // Fallback: just maximize
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 frame.setVisible(true);
                 isFullScreen = true;
+
+                bringToFrontAndFocus();
             }
         }
 
         private void exitFullScreen() {
             try {
+                // Release fullscreen on the device if we're in it
                 if (fsDevice != null && fsDevice.getFullScreenWindow() == frame) {
                     fsDevice.setFullScreenWindow(null);
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
+
+            // Required to safely change undecorated flag
             frame.dispose();
             frame.setUndecorated(wasDecorated);
             frame.setResizable(true);
-            if (prevBounds != null) frame.setBounds(prevBounds);
-            frame.setExtendedState(JFrame.NORMAL);
+
+            if (prevBounds != null) {
+                frame.setBounds(prevBounds);
+            } else {
+                frame.setExtendedState(JFrame.NORMAL);
+            }
+
             frame.setVisible(true);
             isFullScreen = false;
+
+            // Again, make sure it stays visible and focused
+            bringToFrontAndFocus();
+        }
+
+        // Helper used by both enter/exit to avoid the "window vanished" feeling
+        private void bringToFrontAndFocus() {
+            frame.setAlwaysOnTop(true);
+            frame.toFront();
+            frame.requestFocus();
+            frame.setAlwaysOnTop(false);
         }
     }
 
@@ -1746,7 +1865,7 @@ public class BugaSphereFivePhaseExperience {
 
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("BugaSphere Five-Phase Experience Version 12");
-// -------- App Icon (v12, safe loading) --------
+            // -------- App Icon (v12, safe loading) --------
             try {
                 java.util.List<Image> icons = new java.util.ArrayList<>();
 
@@ -1785,8 +1904,7 @@ public class BugaSphereFivePhaseExperience {
             } catch (Exception ex) {
                 System.err.println("Could not load app icons, continuing without custom icon.");
             }
-// -------- End App Icon --------
-
+            // -------- End App Icon --------
 
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             f.setLayout(new BorderLayout());
@@ -1941,14 +2059,12 @@ public class BugaSphereFivePhaseExperience {
             JButton btnStart = new JButton("▶ / || Start");
             JButton btnStop  = new JButton("■ Stop");
 
-
             for (JButton b : new JButton[]{btnStart, btnStop}) {
                 b.setFocusable(false);
             }
 
             bottomPanel.add(btnStart);
             bottomPanel.add(btnStop);
-
 
             f.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -1988,7 +2104,6 @@ public class BugaSphereFivePhaseExperience {
                 panel.setPausedVisual(false);
             };
 
-
             Runnable stopSession = () -> {
                 if (!panel.sessionActive) return;
                 long dur = panel.stopSessionTimer();
@@ -2011,7 +2126,6 @@ public class BugaSphereFivePhaseExperience {
             });
 
             btnStop.addActionListener(e -> stopSession.run());
-
 
             panel.addMouseListener(new MouseAdapter() {
                 @Override
@@ -2193,7 +2307,6 @@ public class BugaSphereFivePhaseExperience {
             Thread loop = new Thread(() -> {
                 try (TonePlayer tp = new TonePlayer()) {
                     int idx = 0;
-                    boolean firstRun = true;
 
                     panel.resetToTop();
 
@@ -2207,7 +2320,6 @@ public class BugaSphereFivePhaseExperience {
                             idx = 0;
                             panel.resetToTop();
                         }
-
 
                         Phase p    = PHASES[idx];
                         Phase next = PHASES[(idx + 1) % PHASES.length];
@@ -2234,7 +2346,6 @@ public class BugaSphereFivePhaseExperience {
                         }
 
                         idx = (idx + 1) % PHASES.length;
-                        firstRun = false;
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
