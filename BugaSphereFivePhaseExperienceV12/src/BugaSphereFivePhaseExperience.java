@@ -1,5 +1,5 @@
-// BugaSphereFivePhaseExprience.java
-// Buga Sphere Five-Phase Experience
+// BugaSphereFivePhaseExperience.java
+// Buga Sphere Five-Phase Experience — Version 12
 // Designed by Seyedrasool Sadrieh @ Mesgona — November 2025, Los Angeles
 //
 // • One phase = one full breath (inhale + exhale).
@@ -28,6 +28,7 @@
 //   [F11] or [Alt+Enter] Fullscreen
 //   [Esc]  Exit (or exit fullscreen first)
 //
+//
 // Speed modes (loop length):
 //   [1] IGNITE     — 10s loop ( 2s / phase)
 //   [2] BALANCE    — 20s loop ( 4s / phase)
@@ -35,14 +36,17 @@
 //   [4] ZEN        — 60s loop (12s / phase)
 //   [5] TRANSCEND  — 120s loop (24s / phase)
 //
+//
 // Breath style (inhale/exhale):
 //   [Q] Coherent   — 50/50
 //   [W] Relaxed    — 60/40
 //   [E] Deep Calm  — 67/33
 //
+//
 // Transition:
 //   [T] Hard cut
 //   [Y] Soft fade
+//
 //
 // Rotation:
 //   [7] Continuous
@@ -62,8 +66,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.imageio.ImageIO;
+import java.io.File;
 
-public class BugaSphereFivePhaseExprience {
+
+public class BugaSphereFivePhaseExperience {
 
     /* ---------- Phase model ---------- */
     static class Phase {
@@ -702,7 +709,7 @@ public class BugaSphereFivePhaseExprience {
         }
 
         long currentLifetimeMs() {
-            long base = BugaSphereFivePhaseExprience.lifetimeTotalMs;
+            long base = BugaSphereFivePhaseExperience.lifetimeTotalMs;
             if (sessionActive) {
                 return base + currentSessionMs();
             }
@@ -1738,7 +1745,49 @@ public class BugaSphereFivePhaseExprience {
         loadTotals();
 
         SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("BugaSphere Five-Phase Experience");
+            JFrame f = new JFrame("BugaSphere Five-Phase Experience Version 12");
+// -------- App Icon (v12, safe loading) --------
+            try {
+                java.util.List<Image> icons = new java.util.ArrayList<>();
+
+                // Try classpath resources first: /icon16.png, /icon32.png, etc.
+                int[] sizes = {16, 32, 64, 128, 256};
+                for (int size : sizes) {
+                    String name = "/icon" + size + ".png";
+                    java.net.URL url = BugaSphereFivePhaseExperience.class.getResource(name);
+                    if (url != null) {
+                        icons.add(ImageIO.read(url));
+                    }
+                }
+
+                // If nothing was found on the classpath, fall back to files in the working dir.
+                if (icons.isEmpty()) {
+                    String[] fileNames = {
+                            "icon16.png",
+                            "icon32.png",
+                            "icon64.png",
+                            "icon128.png",
+                            "icon256.png"
+                    };
+                    for (String fn : fileNames) {
+                        java.io.File fIcon = new java.io.File(fn);
+                        if (fIcon.exists()) {
+                            icons.add(ImageIO.read(fIcon));
+                        }
+                    }
+                }
+
+                if (!icons.isEmpty()) {
+                    f.setIconImages(icons);
+                } else {
+                    System.err.println("No icon images found — running without custom app icon.");
+                }
+            } catch (Exception ex) {
+                System.err.println("Could not load app icons, continuing without custom icon.");
+            }
+// -------- End App Icon --------
+
+
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             f.setLayout(new BorderLayout());
 
