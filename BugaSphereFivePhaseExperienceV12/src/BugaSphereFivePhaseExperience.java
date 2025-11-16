@@ -670,6 +670,18 @@ public class BugaSphereFivePhaseExperience {
             }
         }
 
+        /**
+         * Called whenever a top mode (breath / transition / speed / rotation) changes.
+         * This requests the audio loop to restart from Origin and immediately
+         * resets the visual phase to the first phase.
+         */
+        private void onTopModeChanged() {
+            // Audio side: restart phase index on next cycle
+            resetRequested.set(true);
+            // Visual side: snap back to Origin right away
+            resetToTop();
+        }
+
         void setBreathStyle(BreathStyle style) {
             if (breathStyle == style) return;
             if (sessionActive) {
@@ -680,6 +692,8 @@ public class BugaSphereFivePhaseExperience {
             } else {
                 breathStyle = style;
             }
+            // Restart from Origin when top mode changes
+            onTopModeChanged();
         }
 
         void setTransitionMode(TransitionMode tm) {
@@ -692,6 +706,8 @@ public class BugaSphereFivePhaseExperience {
             } else {
                 transition = tm;
             }
+            // Restart from Origin when top mode changes
+            onTopModeChanged();
         }
 
         void setSpeedMode(SpeedMode sm) {
@@ -704,6 +720,8 @@ public class BugaSphereFivePhaseExperience {
             } else {
                 speedMode = sm;
             }
+            // Restart from Origin when top mode changes
+            onTopModeChanged();
         }
 
         void setRotationMode(RotationMode rm) {
@@ -716,8 +734,9 @@ public class BugaSphereFivePhaseExperience {
             } else {
                 rotationMode = rm;
             }
+            // Restart from Origin when top mode changes
+            onTopModeChanged();
         }
-
 
         long loopMillis() {
             long now = pausedVisual ? pausedAtNanos : System.nanoTime();
