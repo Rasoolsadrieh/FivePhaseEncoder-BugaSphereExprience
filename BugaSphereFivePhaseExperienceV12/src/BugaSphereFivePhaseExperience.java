@@ -712,6 +712,22 @@ public class BugaSphereFivePhaseExperience {
             }
         }
 
+        /**
+         * NEW: current segment time for the active segment
+         * (resets when breath, transition, speed, or rotation changes).
+         */
+        long currentSegmentMs() {
+            if (!sessionActive || segments.isEmpty()) return 0L;
+            Segment last = segments.get(segments.size() - 1);
+            long nowMs = System.currentTimeMillis();
+            if (last.durationMs > 0) {
+                // Normally durationMs is only set when segment closes,
+                // but keep this branch for safety.
+                return Math.max(0L, last.durationMs);
+            }
+            return Math.max(0L, nowMs - last.startMs);
+        }
+
         long currentLifetimeMs() {
             long base = BugaSphereFivePhaseExperience.lifetimeTotalMs;
             if (sessionActive) {
@@ -942,7 +958,15 @@ public class BugaSphereFivePhaseExperience {
                 g2.setFont(getFont().deriveFont(Font.BOLD, 24f));
                 String noteName = hzToNoteName(cur.hz);
                 String toneText = "Tone: " + (int) cur.hz + " Hz (" + noteName + ")";
-                g2.drawString(toneText, leftToneX, cy + 10);
+                int toneBaseY = cy + 10;
+                g2.drawString(toneText, leftToneX, toneBaseY);
+
+                // Compute vertical reference for the left chip (under tone)
+                int leftChipTopY = toneBaseY + 20;   // matches drawBigSegmentTimer
+                int leftChipCenterY = leftChipTopY + 35; // boxH/2 (70/2)
+
+                // We keep the right chip slightly higher than the left one
+                int rightChipCenterY = leftChipCenterY - 0;
 
                 // Phase name on right
                 int rightX = cx + radius + 40;
@@ -950,7 +974,7 @@ public class BugaSphereFivePhaseExperience {
                 g2.setColor(contrast);
                 g2.setFont(getFont().deriveFont(Font.BOLD, 28f));
                 String phaseLabel = cur.name;
-                g2.drawString(phaseLabel, rightX, cy - 10);
+                g2.drawString(phaseLabel, rightX, toneBaseY);
 
                 // Breath countdown chip (right)
                 int segmentMs = inInhale ? inhaleMsCurrent : exhaleMsCurrent;
@@ -959,10 +983,13 @@ public class BugaSphereFivePhaseExperience {
                         : (int) Math.min(segmentMs, Math.max(0, phaseElapsedMs - inhaleMsCurrent));
                 int remaining = (int) Math.ceil((segmentMs - segPosMs) / 1000.0);
 
-                drawBreathCountdownChip(g2, rightX, cy + 40, remaining, inInhale, bg);
+                drawBreathCountdownChip(g2, rightX, rightChipCenterY, remaining, inInhale, bg);
 
                 // Left window: current session settings
                 drawCurrentSessionSettings(g2, bg);
+
+                // Big current segment timer (with chip, visually separated)
+                drawBigSegmentTimer(g2, bg);
 
                 // Right window: History
                 if (showHistory) {
@@ -988,16 +1015,22 @@ public class BugaSphereFivePhaseExperience {
             Color contrast = contrast(bg);
             int margin = 24;
             int boxW = 360;
-            int boxH = 210;
+            int boxH = 240;  // slightly taller to fit extra line
             int boxRadius = 18;
 
             int leftX = margin;
             int settingsY = 90;
 
             Font base = getFont();
-            Font titleFont = base.deriveFont(Font.BOLD, 16f);
-            Font bold14 = base.deriveFont(Font.BOLD, 14f);
-            Font plain14 = base.deriveFont(Font.PLAIN, 14f);
+            Font titleFont  = base.deriveFont(Font.BOLD, 16f);
+            Font resetFont  = base.deriveFont(Font.BOLD, 13f);  // smaller for pill
+            Font bold14     = base.deriveFont(Font.BOLD, 14f);
+            Font plain14    = base.deriveFont(Font.PLAIN, 14f);
+
+
+            // Bigger fonts for times
+            Font bigLabelFont = base.deriveFont(Font.BOLD, 15f);
+            Font bigValueFont = base.deriveFont(Font.BOLD, 20f);
 
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(new Color(0, 0, 0, 90));
@@ -1069,15 +1102,82 @@ public class BugaSphereFivePhaseExperience {
             lw = fmBold.stringWidth(lbl);
             g2.setFont(plain14);
             g2.drawString(rotationText, textX + lw, textY);
-            textY += lineStep;
+            textY += lineStep + 4;
 
-            // Current session total time
-            g2.setFont(bold14);
+            // Current segment time (larger)
+            g2.setFont(bigLabelFont);
+            lbl = "Current segment time: ";
+            g2.drawString(lbl, textX, textY);
+            lw = g2.getFontMetrics(bigLabelFont).stringWidth(lbl);
+            g2.setFont(bigValueFont);
+            g2.drawString(fmtMillis(currentSegmentMs()), textX + lw + 4, textY);
+            textY += lineStep + 8;
+
+            // Current session total time (larger)
+            g2.setFont(bigLabelFont);
             lbl = "Current session total time: ";
             g2.drawString(lbl, textX, textY);
-            lw = fmBold.stringWidth(lbl);
-            g2.setFont(plain14);
-            g2.drawString(fmtMillis(currentSessionMs()), textX + lw, textY);
+            lw = g2.getFontMetrics(bigLabelFont).stringWidth(lbl);
+            g2.setFont(bigValueFont);
+            g2.drawString(fmtMillis(currentSessionMs()), textX + lw + 4, textY);
+        }
+
+        /**
+         * NEW: Big "Current segment time" display under the left settings window.
+         * Now drawn inside a chip with extra spacing so the label and time
+         * are not glued together visually.
+         */
+        private void drawBigSegmentTimer(Graphics2D g2, Color bg) {
+            Color contrast = contrast(bg);
+
+            // Center / geometry (same basis as tone)
+            int cx = getWidth() / 2;
+            int cy = getHeight() / 2;
+            int radius = Math.min(getWidth(), getHeight()) / 4;
+
+            // Rebuild the tone text to match the one drawn above
+            String noteName = hzToNoteName(cur.hz);
+            String toneText = "Tone: " + (int) cur.hz + " Hz (" + noteName + ")";
+
+            // Same X as the tone so the chip sits directly under it, left of the pentagon
+            int leftToneX = Math.max(24, cx - radius - 260);
+            int toneY = cy + 10;          // baseline used for the tone label
+
+            // Chip box geometry
+            int boxW = 220;
+            int boxH = 70;
+            int boxX = leftToneX;         // align with tone text
+            int boxY = toneY + 20;        // space between tone and chip
+
+            long segMs = currentSegmentMs();
+            String label = "Current segment time";
+            String time  = fmtMillis(segMs);
+
+            Font base = getFont();
+            Font labelFont = base.deriveFont(Font.BOLD, 14f);
+            Font timeFont  = base.deriveFont(Font.BOLD, 30f);
+
+            // Chip background (semi-transparent rounded rect)
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(0, 0, 0, 90));
+            g2.fillRoundRect(boxX, boxY, boxW, boxH, 16, 16);
+
+            // Label
+            g2.setColor(contrast);
+            g2.setFont(labelFont);
+            FontMetrics fmL = g2.getFontMetrics();
+            int lw = fmL.stringWidth(label);
+            int labelX = boxX + (boxW - lw) / 2;
+            int labelY = boxY + 22;
+            g2.drawString(label, labelX, labelY);
+
+            // Time (big)
+            g2.setFont(timeFont);
+            FontMetrics fmT = g2.getFontMetrics();
+            int tw = fmT.stringWidth(time);
+            int timeX = boxX + (boxW - tw) / 2;
+            int timeY = boxY + boxH - 12;
+            g2.drawString(time, timeX, timeY);
         }
 
         private void drawHistoryWindow(Graphics2D g2, Color bg) {
@@ -1090,9 +1190,11 @@ public class BugaSphereFivePhaseExperience {
             int historyY = 90;
 
             Font base = getFont();
-            Font titleFont = base.deriveFont(Font.BOLD, 16f);
-            Font bold14 = base.deriveFont(Font.BOLD, 14f);
-            Font plain14 = base.deriveFont(Font.PLAIN, 14f);
+            Font titleFont  = base.deriveFont(Font.BOLD, 16f);
+            Font resetFont  = base.deriveFont(Font.BOLD, 13f);  // new smaller font
+            Font bold14     = base.deriveFont(Font.BOLD, 14f);
+            Font plain14    = base.deriveFont(Font.PLAIN, 14f);
+
 
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -1123,7 +1225,9 @@ public class BugaSphereFivePhaseExperience {
                 textY += lineStep; // "Last session segments:"
                 int maxSegW = boxW - 32;
                 for (Segment seg : segments) {
+                    // UPDATED: include breath style in each segment line
                     String segBase = "• " + fmtMillis(seg.durationMs) +
+                            " — " + breathLabel(seg.breath) +
                             " — " + speedLabelShort(seg.speed) +
                             " — " + rotationLabel(seg.rotation) +
                             " — " + transitionLabel(seg.transition);
@@ -1171,8 +1275,11 @@ public class BugaSphereFivePhaseExperience {
 
             // Reset data pill inside header
             String resetLabel = "Reset data";
-            FontMetrics fmTitle = g2.getFontMetrics(titleFont);
-            int resetW = fmTitle.stringWidth(resetLabel) + 18;
+
+// use smaller font for this one
+            g2.setFont(resetFont);
+            FontMetrics fmReset = g2.getFontMetrics();
+            int resetW = fmReset.stringWidth(resetLabel) + 14;
             int resetH = 22;
             int resetX = historyX + boxW - resetW - 14;
             int resetY = historyY + 8;
@@ -1182,9 +1289,12 @@ public class BugaSphereFivePhaseExperience {
             g2.setColor(new Color(255, 255, 255, 180));
             g2.drawRoundRect(resetX, resetY, resetW, resetH, 12, 12);
 
-            int resetTextX = resetX + 9;
+// now perfectly centered inside the pill
+            int textWidth  = fmReset.stringWidth(resetLabel);
+            int resetTextX = resetX + (resetW - textWidth) / 2;
             int resetTextY = resetY + resetH - 6;
             g2.drawString(resetLabel, resetTextX, resetTextY);
+
 
             resetDataBounds = new Rectangle(resetX, resetY, resetW, resetH);
 
@@ -1243,7 +1353,9 @@ public class BugaSphereFivePhaseExperience {
                 g2.setFont(plain14);
                 int maxSegW = boxW - (textX - historyX) - 20;
                 for (Segment seg : segments) {
+                    // UPDATED: include breath style in each segment line
                     String segBase = "• " + fmtMillis(seg.durationMs) +
+                            " — " + breathLabel(seg.breath) +
                             " — " + speedLabelShort(seg.speed) +
                             " — " + rotationLabel(seg.rotation) +
                             " — " + transitionLabel(seg.transition);
@@ -1458,10 +1570,10 @@ public class BugaSphereFivePhaseExperience {
 
         private void drawBreathCountdownChip(Graphics2D g2, int xLeft, int centerY,
                                              int remaining, boolean inInhale, Color bg) {
-            int boxH = 64;
+            int boxH = 70;
             int boxW = 160;
             int x = xLeft;
-            int y = centerY - boxH / 2 + 12;
+            int y = centerY - boxH / 2;   // vertically centered on the requested line
 
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(new Color(0, 0, 0, 90));
