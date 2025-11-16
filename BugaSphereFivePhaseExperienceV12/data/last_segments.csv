@@ -1,0 +1,4 @@
+session_id,index,duration_ms,breath,speed,transition,rotation
+2,1,22380,COHERENT,ZEN,SOFT,CONTINUOUS
+2,2,1846,COHERENT,ZEN,SOFT,NO_MOTION
+2,3,3207,RELAXED,ZEN,SOFT,NO_MOTION

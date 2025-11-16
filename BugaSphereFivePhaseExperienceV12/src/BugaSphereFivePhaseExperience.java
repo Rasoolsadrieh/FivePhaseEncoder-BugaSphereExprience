@@ -451,7 +451,7 @@ public class BugaSphereFivePhaseExperience {
 
         // Per-session mode segment
         static class Segment {
-            final long startMs;
+            long startMs;
             long durationMs;
             final BreathStyle breath;
             final SpeedMode speed;
@@ -507,6 +507,9 @@ public class BugaSphereFivePhaseExperience {
         boolean sessionActive = false;
         long sessionStartMs = 0L;
         long lastSessionDurationMs = 0L;   // used only for history/segments gating
+
+        // NEW: wall-clock pause tracking for timers
+        long pauseStartMs = 0L;
 
         // Segments for last session (mode changes)
         final List<Segment> segments = new ArrayList<>();
@@ -586,6 +589,31 @@ public class BugaSphereFivePhaseExperience {
                 if (!anim.isRunning()) anim.start();
             }
             repaint();
+        }
+
+        // Aligns session & segment timers with pause/resume
+        void handlePauseResume(boolean nowPaused) {
+            if (nowPaused) {
+                // Just paused
+                pauseStartMs = System.currentTimeMillis();
+            } else {
+                // Just resumed
+                if (pauseStartMs != 0L && sessionActive) {
+                    long now = System.currentTimeMillis();
+                    long delta = Math.max(0L, now - pauseStartMs);
+
+                    // Shift session start so paused period is not counted
+                    sessionStartMs += delta;
+
+                    // Shift active segments (durationMs == 0 means still open)
+                    for (Segment seg : segments) {
+                        if (seg.durationMs == 0L) {
+                            seg.startMs += delta;
+                        }
+                    }
+                }
+                pauseStartMs = 0L;
+            }
         }
 
         void resetToTop() {
@@ -742,6 +770,7 @@ public class BugaSphereFivePhaseExperience {
             lastSessionDurationMs = 0L;
             segments.clear();
             startNewSegment(sessionStartMs);
+            pauseStartMs = 0L;
         }
 
         long stopSessionTimer() {
@@ -751,6 +780,7 @@ public class BugaSphereFivePhaseExperience {
             closeCurrentSegment(now);
             lastSessionDurationMs = dur;
             sessionActive = false;
+            pauseStartMs = 0L;
             return dur;
         }
 
@@ -772,6 +802,7 @@ public class BugaSphereFivePhaseExperience {
             segments.clear();
             lastSessionDurationMs = 0L;
             sessionActive = false;
+            pauseStartMs = 0L;
 
             Path dataDir = getDataDir();
             try {
@@ -1276,7 +1307,7 @@ public class BugaSphereFivePhaseExperience {
             // Reset data pill inside header
             String resetLabel = "Reset data";
 
-// use smaller font for this one
+            // use smaller font for this one
             g2.setFont(resetFont);
             FontMetrics fmReset = g2.getFontMetrics();
             int resetW = fmReset.stringWidth(resetLabel) + 14;
@@ -1289,7 +1320,7 @@ public class BugaSphereFivePhaseExperience {
             g2.setColor(new Color(255, 255, 255, 180));
             g2.drawRoundRect(resetX, resetY, resetW, resetH, 12, 12);
 
-// now perfectly centered inside the pill
+            // now perfectly centered inside the pill
             int textWidth  = fmReset.stringWidth(resetLabel);
             int resetTextX = resetX + (resetW - textWidth) / 2;
             int resetTextY = resetY + resetH - 6;
@@ -2234,6 +2265,7 @@ public class BugaSphereFivePhaseExperience {
                     boolean nowPaused = !paused.get();
                     paused.set(nowPaused);
                     panel.setPausedVisual(nowPaused);
+                    panel.handlePauseResume(nowPaused);
                 }
             });
 
@@ -2296,6 +2328,7 @@ public class BugaSphereFivePhaseExperience {
                         boolean nowPaused = !paused.get();
                         paused.set(nowPaused);
                         panel.setPausedVisual(nowPaused);
+                        panel.handlePauseResume(nowPaused);
                     }
                 }
             });
